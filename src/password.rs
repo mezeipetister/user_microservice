@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Gardenzilla.  If not, see <http://www.gnu.org/licenses/>.
 
+use crate::prelude::ServiceError::*;
+use crate::prelude::ServiceResult;
 use bcrypt::{hash, verify};
-use prelude::AppResult;
-use prelude::Error::*;
 use rand::Rng;
 
 /// # Hash password
@@ -26,13 +26,13 @@ use rand::Rng;
 /// use core_lib::user::password::hash_password;
 /// let hash = hash_password("purple dog").unwrap();
 /// ```
-pub fn hash_password(password: &str) -> AppResult<String> {
+pub fn hash_password(password: &str) -> ServiceResult<String> {
     //let hashed = hash("hunter2", DEFAULT_COST)?;
     //let valid = verify("hunter2", &hashed)?;
     match hash(password, 6) {
         Ok(hash) => Ok(hash),
         Err(_) => Err(InternalError(
-            "Error while creating hash from password".into(),
+            "ServiceError while creating hash from password".into(),
         )),
     }
 }
@@ -47,11 +47,11 @@ pub fn hash_password(password: &str) -> AppResult<String> {
 ///                         "purple_dog",
 ///                         &hash).unwrap();
 /// ```
-pub fn verify_password_from_hash<'a>(password: &'a str, hash: &'a str) -> AppResult<bool> {
+pub fn verify_password_from_hash<'a>(password: &'a str, hash: &'a str) -> ServiceResult<bool> {
     match verify(password, &hash) {
         Ok(result) => Ok(result),
         Err(_) => Err(InternalError(
-            "Error while trying verify password from hash".into(),
+            "ServiceError while trying verify password from hash".into(),
         )),
     }
 }
@@ -63,7 +63,7 @@ pub fn verify_password_from_hash<'a>(password: &'a str, hash: &'a str) -> AppRes
 /// use core_lib::user::password::generate_random_password;
 /// let password = generate_random_password(None).unwrap();
 /// ```
-pub fn generate_random_password(length: Option<u32>) -> AppResult<String> {
+pub fn generate_random_password(length: Option<u32>) -> ServiceResult<String> {
     let mut rng = rand::thread_rng();
     let mut password = "".to_owned();
     let chars: Vec<char> = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -77,7 +77,7 @@ pub fn generate_random_password(length: Option<u32>) -> AppResult<String> {
             Some(ch) => ch,
             None => {
                 return Err(InternalError(
-                    "Error while generating random password!".into(),
+                    "ServiceError while generating random password!".into(),
                 ))
             }
         };
@@ -100,7 +100,7 @@ pub fn generate_random_password(length: Option<u32>) -> AppResult<String> {
 /// use core_lib::user::password::validate_password;
 /// assert_eq!(validate_password("DEmoPassWord1234789").is_ok(), true);
 /// ```
-pub fn validate_password(password: &str) -> AppResult<()> {
+pub fn validate_password(password: &str) -> ServiceResult<()> {
     let min_password_len = 3;
     let min_character_lowercase = 2;
     let min_character_uppercase = 1;

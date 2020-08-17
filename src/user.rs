@@ -15,9 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Gardenzilla.  If not, see <http://www.gnu.org/licenses/>.
 
-use crate::_prelude::Error::*;
-use crate::_prelude::*;
 use crate::password::*;
+use crate::prelude::ServiceError::*;
+use crate::prelude::*;
 use chrono::prelude::*;
 use protos::user::*;
 use serde::{Deserialize, Serialize};
@@ -81,7 +81,7 @@ impl User {
         mut email: String,
         phone: String,
         created_by: String,
-    ) -> AppResult<Self> {
+    ) -> ServiceResult<Self> {
         // Conver ID into lowercase anyway.
         id = id.to_lowercase();
         // Convert email address into lowercase anyway.
@@ -164,7 +164,7 @@ impl User {
         &self.id
     }
     // TODO: Remove this, as User ID is unmutable
-    pub fn set_user_id(&mut self, user_id: String) -> AppResult<()> {
+    pub fn set_user_id(&mut self, user_id: String) -> ServiceResult<()> {
         if user_id.len() <= 5 {
             Err(BadRequest(
                 "A felhasználói azonosító legalább 5 karakter kell, hogy legyen".into(),
@@ -181,7 +181,7 @@ impl User {
     pub fn get_user_name(&self) -> &str {
         &self.name
     }
-    pub fn set_user_name(&mut self, name: String) -> AppResult<()> {
+    pub fn set_user_name(&mut self, name: String) -> ServiceResult<()> {
         if name.len() < 5 {
             Err(BadRequest(
                 "A user neve legalább 5 karakter kell, hogy legyen".into(),
@@ -194,7 +194,7 @@ impl User {
     pub fn get_user_email(&self) -> &str {
         &self.email
     }
-    pub fn set_user_email(&mut self, email: String) -> AppResult<()> {
+    pub fn set_user_email(&mut self, email: String) -> ServiceResult<()> {
         if email.contains('@') && email.contains('.') && email.len() > 5 {
             self.email = email;
             Ok(())
@@ -208,7 +208,7 @@ impl User {
     pub fn get_user_phone(&self) -> &str {
         &self.phone
     }
-    pub fn set_user_phone(&mut self, phone: String) -> AppResult<()> {
+    pub fn set_user_phone(&mut self, phone: String) -> ServiceResult<()> {
         if phone.len() > 5 {
             self.phone = phone;
             Ok(())
@@ -227,7 +227,7 @@ impl User {
     pub fn get_password_hash(&self) -> &str {
         &self.password_hash
     }
-    pub fn set_password(&mut self, password: String) -> AppResult<()> {
+    pub fn set_password(&mut self, password: String) -> ServiceResult<()> {
         validate_password(&password)?;
         self.password_hash = hash_password(&password)?;
         Ok(())
@@ -236,7 +236,7 @@ impl User {
     // TODO: Maybe should be at a higher level using User trait reference as input?
     // Maybe this?
     // => fn reset_password<T: User>(user: &T) -> Result<(), String> {...}
-    pub fn reset_password(&mut self) -> AppResult<()> {
+    pub fn reset_password(&mut self) -> ServiceResult<()> {
         // TODO!: Implement it using RPC service
         // let new_password = generate_random_password(None)?;
         // self.password_hash = hash_password(&new_password)?;
@@ -254,11 +254,11 @@ impl User {
         //     Ok(_) => (),
         //     // TODO:
         //     // Use email pool, in case of email service failure.
-        //     // Instead of using error in case of error - directly here -,
-        //     // We should say its Ok(()) now, and in case of error, the email pool,
+        //     // Instead of using ServiceError in case of ServiceError - directly here -,
+        //     // We should say its Ok(()) now, and in case of ServiceError, the email pool,
         //     // should manage the trials.
         //     Err(msg) => {
-        //         return Err(InternalError(format!(
+        //         return Err(InternalServiceError(format!(
         //             "Az új jelszó elkészült, de hiba az email elküldése során. A hibaüzenet: {}",
         //             msg
         //         )))
@@ -276,7 +276,7 @@ impl User {
 //         &self.id
 //     }
 //     // TODO: Fix this one!
-//     fn reload(&mut self) -> AppResult<()> {
+//     fn reload(&mut self) -> ServiceResult<()> {
 //         Ok(())
 //     }
 //     fn get_path(&self) -> Option<&str> {
@@ -285,7 +285,7 @@ impl User {
 //             None => None,
 //         }
 //     }
-//     fn set_path(&mut self, path: &str) -> AppResult<()> {
+//     fn set_path(&mut self, path: &str) -> ServiceResult<()> {
 //         self.path = Some(path.into());
 //         Ok(())
 //     }
@@ -301,7 +301,7 @@ impl VecPackMember for User {
     // fn try_from(from: &str) -> StorageResult<Self::ResultType> {
     //     match deserialize_object(from) {
     //         Ok(res) => Ok(res),
-    //         Err(_) => Err(Error::DeserializeError("user has wrong format".to_string())),
+    //         Err(_) => Err(ServiceError::DeserializeServiceError("user has wrong format".to_string())),
     //     }
     // }
 }

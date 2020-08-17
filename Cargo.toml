@@ -10,7 +10,7 @@ version = "0.1.0"
 bcrypt = "*"
 chrono = {version = "0.4", features = ["serde"]}
 futures = "*"
-prelude = {git = "https://github.com/gardenzilla/prelude"}
+# prelude = {git = "https://github.com/gardenzilla/prelude"}
 prost = "0.6"
 protos = {git = "https://github.com/mezeipetister/protos", tag = "0.1"}
 rand = "*"

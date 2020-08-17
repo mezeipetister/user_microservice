@@ -1,4 +1,4 @@
-extern crate prelude as _prelude;
+use prelude::*;
 use protos::user::user_server::*;
 use protos::user::*;
 use std::{path::PathBuf, sync::Mutex};
@@ -18,6 +18,15 @@ impl UserService {
     fn new(users: Mutex<VecPack<user::User>>) -> Self {
         Self { users }
     }
+    fn create_new_user(&self, u: CreateNewRequest) -> ServiceResult<UserObj> {
+        if let Ok(_) = self.users.lock().unwrap().find_id(&u.username) {
+            return Err(ServiceError::already_exist("User exist!"));
+        }
+        let new_user = user::User::new(u.username, u.name, u.email, u.phone, u.created_by)?;
+        let user_obj: UserObj = (&new_user).into();
+        self.users.lock().unwrap().insert(new_user)?;
+        Ok(user_obj)
+    }
 }
 
 #[tonic::async_trait]
@@ -26,34 +35,12 @@ impl User for UserService {
         &self,
         request: Request<CreateNewRequest>,
     ) -> Result<Response<CreateNewResponse>, Status> {
-        let req = request.into_inner();
-        let new_user: user::User =
-            user::User::new(req.username, req.name, req.email, req.phone, req.created_by)
-                .map_err(|e| Status::invalid_argument(e.to_string()))?;
-        if let Ok(_) = self
-            .users
-            .lock()
-            .map_err(|_| Status::internal("Lock error"))?
-            .find_id_mut(&new_user.get_id())
-        {
-            return Err(Status::already_exists("A kért user ID már foglalt!"));
-        }
-        match self
-            .users
-            .lock()
-            .map_err(|_| Status::internal("Lock error"))?
-            .insert(new_user.clone())
-        {
-            Ok(_) => {
-                let response = CreateNewResponse {
-                    user: Some(new_user.into()),
-                };
-                return Ok(Response::new(response));
-            }
-            Err(_) => Err(Status::unknown("Oooo")),
-        }
+        Ok(Response::new(CreateNewResponse {
+            user: Some(self.create_new_user(request.into_inner())?),
+        }))
     }
     async fn get_all(&self, _request: Request<()>) -> Result<Response<GetAllResponse>, Status> {
+        println!("New get all");
         let users = self
             .users
             .lock()
@@ -126,14 +113,14 @@ impl User for UserService {
     }
     async fn reset_password(
         &self,
-        request: Request<ReserPasswordRequest>,
+        _request: Request<ReserPasswordRequest>,
     ) -> Result<Response<ReserPasswordResponse>, Status> {
         todo!()
     }
 }
 
 #[tokio::main]
-async fn main() -> prelude::AppResult<()> {
+async fn main() -> prelude::ServiceResult<()> {
     let users: Mutex<VecPack<user::User>> = Mutex::new(
         VecPack::try_load_or_init(PathBuf::from("data/users"))
             .expect("Error while loading users storage"),
