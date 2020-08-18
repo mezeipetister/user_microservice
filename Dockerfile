@@ -10,7 +10,7 @@
 # CMD ["myapp"]
 
 FROM debian:buster-slim
-WORKDIR /usr/src/app
+WORKDIR /usr/local/bin
 # RUN strip ./target/release/user_microservice
 COPY ./target/release/user_microservice /usr/local/bin/user_microservice
 RUN apt-get update && apt-get install -y
